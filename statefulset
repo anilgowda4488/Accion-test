@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nginx-statefulset
+  labels:
+    app: nginx-accion
+spec:
+  serviceName: nginx-headless
+  replicas: 2  # Number of NGINX replicas
+  selector:
+    matchLabels:
+      app: nginx-accion
+  template:
+    metadata:
+      labels:
+        app: nginx-accion
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.19-alpine
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: "500m"      # 0.5 CPU
+            memory: "256Mi"  # 256 MB RAM
+          requests:
+            cpu: "250m"      # 0.25 CPU
+            memory: "128Mi"  # 128 MB RAM
+        volumeMounts:
+        - name: nginx-data
+          mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:
+  - metadata:
+      name: nginx-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-headless
+spec:
+  clusterIP: None
+  selector:
+    app: nginx-accion
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
