@@ -1,14 +1,41 @@
-FROM nginx:1.19-alpine
+# Stage 1: Builder Stage
+FROM debian:bullseye AS builder
 
-# Set a secure working directory
-WORKDIR /usr/share/nginx/html
+# Install required dependencies for building Nginx
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpcre3 \
+    libpcre3-dev \
+    zlib1g \
+    zlib1g-dev \
+    libssl-dev \
+    curl \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy static content or configuration files if needed (optional)
-# COPY index.html /usr/share/nginx/html/
-# COPY nginx.conf /etc/nginx/nginx.conf
+ENV NGINX_VERSION=1.19
 
-# Expose port 80 for HTTP traffic
-EXPOSE 80
+WORKDIR /usr/src/nginx
+RUN curl -fsSL http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar -xz
 
-# Set the default command
-CMD ["nginx", "-g", "daemon off;"]
+WORKDIR /usr/src/nginx/nginx-${NGINX_VERSION}
+RUN ./configure \
+    --prefix=/usr/local/nginx \
+    --with-http_ssl_module \
+    --with-http_v2_module \
+    --with-http_gzip_static_module \
+    --with-stream \
+    --with-pcre \
+    && make -j$(nproc) \
+    && make install
+
+---
+FROM debian:bullseye-slim
+RUN useradd -r -d /var/cache/nginx -s /sbin/nologin nginx
+COPY --from=builder /usr/local/nginx /usr/local/nginx
+RUN mkdir -p /var/cache/nginx \
+    && chown -R nginx:nginx /var/cache/nginx \
+    && chown -R nginx:nginx /usr/local/nginx
+EXPOSE 80 443
+USER nginx
+CMD ["/usr/local/nginx/sbin/nginx", "-g", "daemon off;"]
