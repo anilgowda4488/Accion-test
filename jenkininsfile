@@ -1,0 +1,35 @@
+pipeline {
+    agent {
+        label 'accion-node'
+    }
+
+    environment {
+        KUBE_CONFIG = credentials('kubeconfig')  // Kubernetes credentials stored in Jenkins
+        IMAGE_NAME = 'anildevops/nginx-app:latest'
+        DOCKER_USERNAME = credentials('docker-username')  // Docker Hub username stored in Jenkins
+        DOCKER_PASSWORD = credentials('docker-password')  // Docker Hub password stored in Jenkins
+    }
+
+    stages {
+        stage('Docker Login') {
+            steps {
+                sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+            }
+        }
+
+        stage('Pull Docker Image') {
+            steps {
+                sh 'docker pull $IMAGE_NAME'
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withKubeConfig([credentialsId: 'kubeconfig']) {
+                    sh 'kubectl apply -f k8s/nginx-statefulset.yaml'
+                    sh 'kubectl rollout restart statefulset nginx-statefulset'
+                }
+            }
+        }
+    }
+}
