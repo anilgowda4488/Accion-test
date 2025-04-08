@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'your-dockerhub-username/custom-nginx'
+        IMAGE_NAME = 'dockerhub-username/custom-nginx'
         IMAGE_TAG = "v${BUILD_NUMBER}"
         SONAR_PROJECT_KEY = 'custom-nginx'
-        SONAR_SCANNER_CLI = 'SonarQubeScanner' // Must be set in Jenkins "Global Tool Configuration"
-        REGISTRY_CREDENTIALS = 'dockerhub-creds-id' // DockerHub username/password credential ID
-        SONAR_CREDS = 'sonar-creds-id' // SonarQube token credential ID (use secret text)
-        KUBECONFIG_CREDENTIALS = 'kubeconfig-creds-id' // kubeconfig file credential ID
+        SONAR_SCANNER_CLI = 'SonarQubeScanner'
+        REGISTRY_CREDENTIALS = 'dockerhub-creds-id'
+        SONAR_CREDS = 'sonar-creds-id'
+        KUBECONFIG_CREDENTIALS = 'kubeconfig-creds-id'
     }
 
     tools {
