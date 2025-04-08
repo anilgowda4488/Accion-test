@@ -1,35 +1,104 @@
 pipeline {
-    agent {
-        label 'accion-node'
-    }
+    agent any
 
     environment {
-        KUBE_CONFIG = credentials('kubeconfig')  // Kubernetes credentials stored in Jenkins
-        IMAGE_NAME = 'anildevops/nginx-app:latest'
-        DOCKER_USERNAME = credentials('docker-username')  // Docker Hub username stored in Jenkins
-        DOCKER_PASSWORD = credentials('docker-password')  // Docker Hub password stored in Jenkins
+        IMAGE_NAME = 'your-dockerhub-username/custom-nginx'
+        IMAGE_TAG = "v${BUILD_NUMBER}"
+        SONAR_PROJECT_KEY = 'custom-nginx'
+        SONAR_SCANNER_CLI = 'SonarQubeScanner' // Must be set in Jenkins "Global Tool Configuration"
+        REGISTRY_CREDENTIALS = 'dockerhub-creds-id' // DockerHub username/password credential ID
+        SONAR_CREDS = 'sonar-creds-id' // SonarQube token credential ID (use secret text)
+        KUBECONFIG_CREDENTIALS = 'kubeconfig-creds-id' // kubeconfig file credential ID
+    }
+
+    tools {
+        sonarQubeScanner "${SONAR_SCANNER_CLI}"
     }
 
     stages {
-        stage('Docker Login') {
+        stage('Checkout Code') {
             steps {
-                sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+                checkout scm
             }
         }
 
-        stage('Pull Docker Image') {
+        stage('Static Code Scan - SonarQube') {
             steps {
-                sh 'docker pull $IMAGE_NAME'
+                withSonarQubeEnv('MySonarQube') {
+                    withCredentials([string(credentialsId: SONAR_CREDS, variable: 'SONAR_TOKEN')]) {
+                        sh """
+                        sonar-scanner \
+                          -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                          -Dsonar.sources=. \
+                          -Dsonar.host.url=$SONAR_HOST_URL \
+                          -Dsonar.login=$SONAR_TOKEN
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                sh """
+                docker run -d -p 8080:80 --name test-nginx ${IMAGE_NAME}:${IMAGE_TAG}
+                sleep 5
+                curl -f http://localhost:8080 || (echo 'Health check failed' && exit 1)
+                docker stop test-nginx && docker rm test-nginx
+                """
+            }
+        }
+
+        stage('Vulnerability Scan - Trivy') {
+            steps {
+                sh "trivy image --exit-code 1 --severity CRITICAL ${IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh """
+                    echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+                    docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                    docker logout
+                    """
+                }
             }
         }
 
         stage('Deploy to Kubernetes') {
+            when {
+                expression { fileExists('k8s/deployment.yaml') }
+            }
             steps {
-                withKubeConfig([credentialsId: 'kubeconfig']) {
-                    sh 'kubectl apply -f k8s/nginx-statefulset.yaml'
-                    sh 'kubectl rollout restart statefulset nginx-statefulset'
+                withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG')]) {
+                    sh """
+                    export KUBECONFIG=$KUBECONFIG
+                    sed -i "s|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|" k8s/deployment.yaml
+                    kubectl apply -f k8s/
+                    """
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            echo "🧼 Cleaning up workspace..."
+            cleanWs()
+        }
+        failure {
+            echo "Pipeline failed. Please check the logs for details."
+        }
+        success {
+            echo "CI/CD pipeline completed successfully!"
         }
     }
 }
