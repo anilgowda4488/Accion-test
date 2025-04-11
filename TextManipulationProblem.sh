@@ -9,5 +9,5 @@ if grep -q 'ERROR' "$LOG_FILE"; then
   echo "Extracting and transforming ERROR messages:"
   grep 'ERROR' "$LOG_FILE" | sed 's/.*ERROR: /ISSUE: /' | tr '[:lower:]' '[:upper:]'
 else
-  echo "No error found"
+  echo "No errors found"
 fi
