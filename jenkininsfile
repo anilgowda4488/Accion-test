@@ -87,39 +87,15 @@ pipeline {
                 }
             }
         }
-        stage('Check Pod Status') {
+        stage('Check Deployment Status') {
             steps {
                 withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG')]) {
-                    script {
-                        def maxRetries = 12 // 12 x 10s = 2 minutes
-                        def success = false
-
-                        for (int i = 0; i < maxRetries; i++) {
-                            def status = sh(
-                                script: "KUBECONFIG=$KUBECONFIG kubectl get pods -l app=${appLabel} -o jsonpath='{.items[0].status.phase}'",
-                                returnStdout: true
-                            ).trim()
-
-                            echo "🔍 Pod status: ${status}"
-
-                            if (status == "✌🏻 Running") {
-                                echo "Pod is running!"
-                                success = true
-                                break
-                            } else if (status == "CrashLoopBackOff" || status == "Error" || status == "Failed") {
-                                error "🚫 Pod in bad state: ${status}"
-                            }
-
-                            sleep(10)
-                        }
-
-                        if (!success) {
-                            error "⏰ Timeout: Pod did not reach 'Running' state in time."
-                        }
-                    }
+                    sh '''
+                        kubectl --kubeconfig=$KUBECONFIG rollout status deployment/custom-nginx --timeout=60s
+                    '''
                 }
             }
-        }    
+        }   
     post {
         always {
             echo "Cleaning up workspace..."
