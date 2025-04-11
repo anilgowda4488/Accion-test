@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'dockerhub-anil/custom-nginx'
+        IMAGE_NAME = 'dockerhub-anil/nginx:1.19-alpine'
         IMAGE_TAG = "v${BUILD_NUMBER}"
         SONAR_PROJECT_KEY = 'custom-nginx'
         SONAR_SCANNER_CLI = 'SonarQubeScanner'
