@@ -81,8 +81,8 @@ pipeline {
                 withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG')]) {
                     sh """
                     export KUBECONFIG=$KUBECONFIG
-                    sed -i "s|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|" k8s/deployment.yaml
-                    kubectl apply -f k8s/
+                    sed -i "s|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|" statefulset.yaml
+                    kubectl apply -f 
                     """
                 }
             }
@@ -91,7 +91,6 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG')]) {
                     script {
-                        def appLabel = "custom-nginx"
                         def maxRetries = 12 // 12 x 10s = 2 minutes
                         def success = false
 
