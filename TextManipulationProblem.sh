@@ -7,7 +7,7 @@
 #	4.	sort → Sorts the names alphabetically.
 
 #By using the grep and tr
-  grep 'ERROR' system.log | sed 's/.*ERROR: /ERROR: /' | tr '[:lower:]' '[:upper:]'
+  grep 'ERROR' system.log | sed 's/.*ERROR: /ISSUE:WQ: /' | tr '[:lower:]' '[:upper:]'
 # 1.	grep 'ERROR' system.log' → Selects lines with "ERROR".
 #	2.	sed 's/.*ERROR: /ERROR: /' → Removes everything before "ERROR: ".
 #	3.	tr '[:lower:]' '[:upper:]' → Converts to uppercase.
