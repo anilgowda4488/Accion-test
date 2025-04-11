@@ -11,8 +11,3 @@
 # 1.	grep 'ERROR' system.log' → Selects lines with "ERROR".
 #	2.	sed 's/.*ERROR: /ERROR: /' → Removes everything before "ERROR: ".
 #	3.	tr '[:lower:]' '[:upper:]' → Converts to uppercase.
-
-Output
-  ERROR: DISK SPACE LOW
-  ERROR: NETWORK UNREACHABLE
-  ERROR: FAILED TO START SERVICE
