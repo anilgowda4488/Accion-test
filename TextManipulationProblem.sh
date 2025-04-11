@@ -1,13 +1,13 @@
+#!/bin/bash
 
-#To extract error:
-  awk '/ERROR/ {print toupper(substr($0, index($0, "ERROR")))}' system.log
-# 1.	-F',' → Specifies comma as the field separator.
-#	2.	$3 == "Engineering" → Filters lines where the third column (Department) is “Engineering”.
-#	3.	print $2 → Extracts the second column (Name).
-#	4.	sort → Sorts the names alphabetically.
+LOG_FILE="system.log"
 
-#By using the grep and tr
-  grep 'ERROR' system.log | sed 's/.*ERROR: /ISSUE: /' | tr '[:lower:]' '[:upper:]'
-# 1.	grep 'ERROR' system.log' → Selects lines with "ERROR".
-#	2.	sed 's/.*ERROR: /ERROR: /' → Removes everything before "ERROR: ".
-#	3.	tr '[:lower:]' '[:upper:]' → Converts to uppercase.
+if grep -q 'ERROR' "$LOG_FILE"; then
+  awk '/ERROR/ {print toupper(substr($0, index($0, "ERROR")))}' "$LOG_FILE"
+
+  echo ""
+  echo "Extracting and transforming ERROR messages:"
+  grep 'ERROR' "$LOG_FILE" | sed 's/.*ERROR: /ISSUE: /' | tr '[:lower:]' '[:upper:]'
+else
+  echo "No error found"
+fi
