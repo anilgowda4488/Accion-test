@@ -102,7 +102,7 @@ pipeline {
             cleanWs()
         }
         failure {
-            echo "Pipeline failed. Please check the logs for details."
+            echo "Pipeline failed. Please check console output"
         }
         success {
             echo "CI/CD pipeline completed successfully!"
