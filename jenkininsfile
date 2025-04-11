@@ -74,9 +74,6 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            when {
-                expression { fileExists('statefulset.yaml') }
-            }
             steps {
                 withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG')]) {
                     sh """
@@ -91,7 +88,7 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG')]) {
                     sh '''
-                        kubectl --kubeconfig=$KUBECONFIG -n app-nginx wait --for=condition=ready pod -l app=custom-nginx --timeout=180s
+                        kubectl --kubeconfig=$KUBECONFIG -n app-nginx wait --for=condition=ready pod -l app=nginx-accion --timeout=180s
                     '''
                 }
             }
