@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'dockerhub-username/custom-nginx'
+        IMAGE_NAME = 'dockerhub-anil/custom-nginx'
         IMAGE_TAG = "v${BUILD_NUMBER}"
         SONAR_PROJECT_KEY = 'custom-nginx'
         SONAR_SCANNER_CLI = 'SonarQubeScanner'
@@ -103,19 +103,19 @@ pipeline {
 
                             echo "🔍 Pod status: ${status}"
 
-                            if (status == "Running") {
-                                echo "✅ Pod is running!"
+                            if (status == "✌🏻 Running") {
+                                echo "Pod is running!"
                                 success = true
                                 break
                             } else if (status == "CrashLoopBackOff" || status == "Error" || status == "Failed") {
-                                error "❌ Pod in bad state: ${status}"
+                                error "🚫 Pod in bad state: ${status}"
                             }
 
                             sleep(10)
                         }
 
                         if (!success) {
-                            error "⏳ Timeout: Pod did not reach 'Running' state in time."
+                            error "⏰ Timeout: Pod did not reach 'Running' state in time."
                         }
                     }
                 }
